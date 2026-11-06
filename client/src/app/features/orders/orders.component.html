@@ -1,0 +1,96 @@
+<div class="orders-page">
+  <header class="orders-page__header">
+    <h1 class="orders-page__title">Gestión de Órdenes</h1>
+    <div class="orders-page__status-indicator">
+      <span class="orders-page__status-dot" [class.orders-page__status-dot--connected]="isConnected$ | async"></span>
+      <span class="orders-page__status-text">{{ (isConnected$ | async) ? 'Conectado' : 'Desconectado' }}</span>
+    </div>
+  </header>
+
+  <section class="orders-page__content" *ngIf="orders$ | async as orders; else loadingTemplate">
+    <div class="orders-page__empty-state" *ngIf="orders.length === 0">
+      <mat-icon class="orders-page__empty-icon">inbox</mat-icon>
+      <p class="orders-page__empty-message">No hay órdenes disponibles</p>
+      <button mat-raised-button color="primary" (click)="refreshOrders()">
+        <mat-icon>refresh</mat-icon>
+        Actualizar
+      </button>
+    </div>
+
+    <div class="orders-page__list" *ngIf="orders.length > 0">
+      <mat-card
+        *ngFor="let order of orders; trackBy: trackByOrderId"
+        class="orders-page__card"
+        [class.orders-page__card--highlighted]="highlightedOrderId === order.id"
+      >
+        <mat-card-header class="orders-page__card-header">
+          <div class="orders-page__card-title">
+            <span class="orders-page__order-id">Orden #{{ order.id }}</span>
+            <app-order-status
+              [status]="order.status"
+              [statusUpdatedAt]="order.updatedAt"
+            ></app-order-status>
+          </div>
+          <div class="orders-page__card-meta">
+            <span class="orders-page__order-date">
+              <mat-icon>schedule</mat-icon>
+              {{ order.createdAt | date:'medium' }}
+            </span>
+            <span class="orders-page__order-total">
+              <mat-icon>attach_money</mat-icon>
+              {{ order.total | currency }}
+            </span>
+          </div>
+        </mat-card-header>
+
+        <mat-card-content class="orders-page__card-content">
+          <h3 class="orders-page__items-title">Items de la orden</h3>
+          <mat-list class="orders-page__items-list">
+            <mat-list-item *ngFor="let item of order.items" class="orders-page__item">
+              <div matListItemTitle class="orders-page__item-name">{{ item.productName }}</div>
+              <div matListItemLine class="orders-page__item-details">
+                <span class="orders-page__item-quantity">Cantidad: {{ item.quantity }}</span>
+                <span class="orders-page__item-price">{{ item.price | currency }}</span>
+              </div>
+            </mat-list-item>
+          </mat-list>
+        </mat-card-content>
+
+        <mat-card-actions class="orders-page__card-actions">
+          <button mat-button color="primary" (click)="viewOrderDetails(order.id)">
+            <mat-icon>visibility</mat-icon>
+            Ver Detalles
+          </button>
+          <button
+            mat-button
+            color="warn"
+            *ngIf="order.status !== 'CANCELLED' && order.status !== 'DELIVERED'"
+            (click)="cancelOrder(order.id)"
+          >
+            <mat-icon>cancel</mat-icon>
+            Cancelar
+          </button>
+        </mat-card-actions>
+      </mat-card>
+    </div>
+  </section>
+
+  <ng-template #loadingTemplate>
+    <div class="orders-page__loading">
+      <mat-spinner diameter="48"></mat-spinner>
+      <p class="orders-page__loading-message">Cargando órdenes...</p>
+    </div>
+  </ng-template>
+
+  <ng-template #errorTemplate let-error>
+    <div class="orders-page__error">
+      <mat-icon class="orders-page__error-icon">error_outline</mat-icon>
+      <h2 class="orders-page__error-title">Error al cargar las órdenes</h2>
+      <p class="orders-page__error-message">{{ error?.message || 'Ha ocurrido un error inesperado' }}</p>
+      <button mat-raised-button color="primary" (click)="refreshOrders()">
+        <mat-icon>refresh</mat-icon>
+        Reintentar
+      </button>
+    </div>
+  </ng-template>
+</div>

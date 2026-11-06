@@ -1,0 +1,105 @@
+<div class="order-status"
+     [class.order-status--created]="status() === 'created'"
+     [class.order-status--processing]="status() === 'processing'"
+     [class.order-status--shipped]="status() === 'shipped'"
+     [class.order-status--delivered]="status() === 'delivered'"
+     [class.order-status--cancelled]="status() === 'cancelled'"
+     [attr.aria-label]="'Estado de la orden: ' + status()"
+     role="status"
+     aria-live="polite">
+  <span class="order-status__indicator" aria-hidden="true"></span>
+  <span class="order-status__label">{{ getStatusLabel() }}</span>
+  <span class="order-status__timestamp" *ngIf="timestamp()">
+    {{ formatTimestamp() }}
+  </span>
+</div>
+
+<div class="order-status-details" *ngIf="showDetails()">
+  <h4 class="order-status-details__title">Detalles del Estado</h4>
+  <dl class="order-status-details__list">
+    <div class="order-status-details__item">
+      <dt>ID de Orden</dt>
+      <dd>{{ orderId() }}</dd>
+    </div>
+    <div class="order-status-details__item">
+      <dt>Estado Actual</dt>
+      <dd>
+        <span class="order-status__badge" [class]="'order-status__badge--' + status()">
+          {{ getStatusLabel() }}
+        </span>
+      </dd>
+    </div>
+    <div class="order-status-details__item" *ngIf="previousStatus()">
+      <dt>Estado Anterior</dt>
+      <dd>
+        <span class="order-status__badge order-status__badge--previous">
+          {{ getStatusLabel(previousStatus()!) }}
+        </span>
+      </dd>
+    </div>
+    <div class="order-status-details__item">
+      <dt>Última Actualización</dt>
+      <dd>{{ formatTimestamp() }}</dd>
+    </div>
+  </dl>
+</div>
+
+<div class="order-status-history" *ngIf="history().length > 0">
+  <h4 class="order-status-history__title">Historial de Estados</h4>
+  <ul class="order-status-history__list" role="list" aria-label="Historial de cambios de estado">
+    <li *ngFor="let entry of history(); let i = index"
+        class="order-status-history__entry"
+        [class.order-status-history__entry--latest]="i === 0">
+      <span class="order-status-history__status">
+        <span class="order-status__indicator"
+              [class.order-status__indicator--created]="entry.status === 'created'"
+              [class.order-status__indicator--processing]="entry.status === 'processing'"
+              [class.order-status__indicator--shipped]="entry.status === 'shipped'"
+              [class.order-status__indicator--delivered]="entry.status === 'delivered'"
+              [class.order-status__indicator--cancelled]="entry.status === 'cancelled'"
+              aria-hidden="true">
+        </span>
+        {{ getStatusLabel(entry.status) }}
+      </span>
+      <time class="order-status-history__time" [attr.datetime]="entry.timestamp">
+        {{ formatHistoryTimestamp(entry.timestamp) }}
+      </time>
+    </li>
+  </ul>
+</div>
+
+<div class="order-status-actions" *ngIf="showActions()">
+  <button class="order-status-actions__button order-status-actions__button--details"
+          (click)="toggleDetails()"
+          [attr.aria-expanded]="showDetails()"
+          aria-controls="order-status-details">
+    <span aria-hidden="true">{{ showDetails() ? '▼' : '▶' }}</span>
+    {{ showDetails() ? 'Ocultar Detalles' : 'Ver Detalles' }}
+  </button>
+  <button class="order-status-actions__button order-status-actions__button--history"
+          (click)="toggleHistory()"
+          [attr.aria-expanded]="showHistory()"
+          aria-controls="order-status-history">
+    <span aria-hidden="true">{{ showHistory() ? '▼' : '▶' }}</span>
+    {{ showHistory() ? 'Ocultar Historial' : 'Ver Historial' }}
+  </button>
+</div>
+
+<ng-template #loadingTemplate>
+  <div class="order-status order-status--loading" role="status" aria-busy="true">
+    <span class="order-status__spinner" aria-hidden="true"></span>
+    <span class="order-status__label">Cargando estado...</span>
+  </div>
+</ng-template>
+
+<ng-template #errorTemplate>
+  <div class="order-status order-status--error" role="alert">
+    <span class="order-status__indicator order-status__indicator--error" aria-hidden="true"></span>
+    <span class="order-status__label">Error al cargar el estado</span>
+    <button class="order-status__retry-button"
+            (click)="retry()"
+            aria-label="Reintentar cargar el estado">
+      Reintentar
+    </button>
+  </div>
+</ng-template>
